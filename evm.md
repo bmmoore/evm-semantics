@@ -490,6 +490,8 @@ Some checks if an opcode will throw an exception are relatively quick and done u
 Here we load the correct number of arguments from the `wordStack` based on the sort of the opcode.
 Some of them require an argument to be interpereted as an address (modulo 160 bits), so the `#addr?` function performs that check.
 
+TUTORIAL: Fill in the semantics of `#exec` for a `TOP:TernStackOp`.
+
 ```{.k .uiuck .rvk}
     syntax InternalOp ::= UnStackOp Int
                         | BinStackOp Int Int
@@ -498,7 +500,6 @@ Some of them require an argument to be interpereted as an address (modulo 160 bi
  // -------------------------------------------------
     rule <k> #exec [ UOP:UnStackOp   => UOP #addr?(UOP, W0)          ] ... </k> <wordStack> W0 : WS                => WS </wordStack>
     rule <k> #exec [ BOP:BinStackOp  => BOP #addr?(BOP, W0) W1       ] ... </k> <wordStack> W0 : W1 : WS           => WS </wordStack>
-    rule <k> #exec [ TOP:TernStackOp => TOP #addr?(TOP, W0) W1 W2    ] ... </k> <wordStack> W0 : W1 : W2 : WS      => WS </wordStack>
     rule <k> #exec [ QOP:QuadStackOp => QOP #addr?(QOP, W0) W1 W2 W3 ] ... </k> <wordStack> W0 : W1 : W2 : W3 : WS => WS </wordStack>
 
     syntax Int ::= "#addr?" "(" OpCode "," Int ")" [function]
@@ -795,20 +796,24 @@ Some operators don't calculate anything, they just push the stack around a bit.
 
 These operations are getters/setters of the local execution memory.
 
+TUTORIAL: Fill in the semantics of `MSTORE`.
+
 ```{.k .uiuck .rvk}
     syntax UnStackOp ::= "MLOAD"
  // ----------------------------
     rule <k> MLOAD INDEX => #asWord(#range(LM, INDEX, 32)) ~> #push ... </k>
          <localMem> LM </localMem>
 
-    syntax BinStackOp ::= "MSTORE" | "MSTORE8"
- // ------------------------------------------
-    rule <k> MSTORE INDEX VALUE => . ... </k>
-         <localMem> LM => LM [ INDEX := #padToWidth(32, #asByteStack(VALUE)) ] </localMem>
+    syntax BinStackOp ::= "MSTORE"
+ // ------------------------------
 
+    syntax BinStackOp ::= "MSTORE8"
+ // -------------------------------
     rule <k> MSTORE8 INDEX VALUE => . ... </k>
          <localMem> LM => LM [ INDEX <- (VALUE %Int 256) ]    </localMem>
 ```
+
+TUTORIAL: Add high-level opcodes `WMLOAD` and `WMSTORE` for word-aligned `MLOAD` and `MSTORE`.
 
 ### Expressions
 
@@ -877,19 +882,19 @@ NOTE: We have to call the opcode `OR` by `EVMOR` instead, because K has trouble 
 
 These operators make queries about the current execution state.
 
+TUTORIAL: Fill in the semantics of `GASLIMIT`, `NUMBER`, `MSIZE`, and `CODECOPY`.
+
 ```{.k .uiuck .rvk}
     syntax NullStackOp ::= "PC" | "GAS" | "GASPRICE" | "GASLIMIT"
  // -------------------------------------------------------------
     rule <k> PC       => PCOUNT ~> #push ... </k> <pc> PCOUNT </pc>
     rule <k> GAS      => GAVAIL ~> #push ... </k> <gas> GAVAIL </gas>
     rule <k> GASPRICE => GPRICE ~> #push ... </k> <gasPrice> GPRICE </gasPrice>
-    rule <k> GASLIMIT => GLIMIT ~> #push ... </k> <gasLimit> GLIMIT </gasLimit>
 
     syntax NullStackOp ::= "COINBASE" | "TIMESTAMP" | "NUMBER" | "DIFFICULTY"
  // -------------------------------------------------------------------------
     rule <k> COINBASE   => CB   ~> #push ... </k> <coinbase> CB </coinbase>
     rule <k> TIMESTAMP  => TS   ~> #push ... </k> <timestamp> TS </timestamp>
-    rule <k> NUMBER     => NUMB ~> #push ... </k> <number> NUMB </number>
     rule <k> DIFFICULTY => DIFF ~> #push ... </k> <difficulty> DIFF </difficulty>
 
     syntax NullStackOp ::= "ADDRESS" | "ORIGIN" | "CALLER" | "CALLVALUE"
@@ -899,16 +904,16 @@ These operators make queries about the current execution state.
     rule <k> CALLER    => CL   ~> #push ... </k> <caller> CL </caller>
     rule <k> CALLVALUE => CV   ~> #push ... </k> <callValue> CV </callValue>
 
-    syntax NullStackOp ::= "MSIZE" | "CODESIZE"
- // -------------------------------------------
-    rule <k> MSIZE    => 32 *Word MU         ~> #push ... </k> <memoryUsed> MU </memoryUsed>
-    rule <k> CODESIZE => #sizeOpCodeMap(PGM) ~> #push ... </k> <program> PGM </program>
+    syntax NullStackOp ::= "MSIZE"
+ // ------------------------------
+
+    syntax NullStackOp ::= "CODESIZE"
+ // ---------------------------------
+    rule <mode> EXECMODE </mode>
+         <k> CODESIZE => #sizeOpCodeMap(PGM) ~> #push ... </k> <program> PGM </program>
 
     syntax TernStackOp ::= "CODECOPY"
  // ---------------------------------
-    rule <k> CODECOPY MEMSTART PGMSTART WIDTH => . ... </k>
-         <program> PGM </program>
-         <localMem> LM => LM [ MEMSTART := #asmOpCodes(#asOpCodes(PGM)) [ PGMSTART .. WIDTH ] ] </localMem>
 
     syntax UnStackOp ::= "BLOCKHASH"
  // --------------------------------
@@ -918,6 +923,8 @@ These operators make queries about the current execution state.
 ### `JUMP*`
 
 The `JUMP*` family of operations affect the current program counter.
+
+TUTORIAL: Fill in the semantics of `JUMPI`.
 
 ```{.k .uiuck .rvk}
     syntax NullStackOp ::= "JUMPDEST"
@@ -930,8 +937,6 @@ The `JUMP*` family of operations affect the current program counter.
 
     syntax BinStackOp ::= "JUMPI"
  // -----------------------------
-    rule <k> JUMPI DEST I => . ... </k> <pc> _      => DEST          </pc> requires I =/=K 0
-    rule <k> JUMPI DEST 0 => . ... </k> <pc> PCOUNT => PCOUNT +Int 1 </pc>
 ```
 
 ### `STOP` and `RETURN`
@@ -998,19 +1003,11 @@ TODO: It's unclear what to do in the case of an account not existing for these o
 `BALANCE` is specified to push 0 in this case, but the others are not specified.
 For now, I assume that they instantiate an empty account and use the empty data.
 
+TUTORIAL: Fill in the semantics of `BALANCE`.
+
 ```{.k .uiuck .rvk}
     syntax UnStackOp ::= "BALANCE"
  // ------------------------------
-    rule <k> BALANCE ACCT => BAL ~> #push ... </k>
-         <account>
-           <acctID> ACCT </acctID>
-           <balance> BAL </balance>
-           ...
-         </account>
-
-    rule <k> BALANCE ACCT => #newAccount ACCT ~> 0 ~> #push ... </k>
-         <activeAccounts> ACCTS </activeAccounts>
-      requires notBool ACCT in ACCTS
 
     syntax UnStackOp ::= "EXTCODESIZE"
  // ----------------------------------
@@ -1049,6 +1046,8 @@ Should we pad zeros (for the copied "program")?
 
 These operations interact with the account storage.
 
+TUTORIAL: Fill in the semantics of `SSTORE`.
+
 ```{.k .uiuck .rvk}
     syntax UnStackOp ::= "SLOAD"
  // ----------------------------
@@ -1070,28 +1069,6 @@ These operations interact with the account storage.
 
     syntax BinStackOp ::= "SSTORE"
  // ------------------------------
-    rule <k> SSTORE INDEX VALUE => . ... </k>
-         <id> ACCT </id>
-         <account>
-           <acctID> ACCT </acctID>
-           <storage> ... (INDEX |-> (OLD => VALUE)) ... </storage>
-           ...
-         </account>
-         <refund> R => #ifInt OLD =/=Int 0 andBool VALUE ==Int 0
-                        #then R +Word Rsstoreclear < SCHED >
-                        #else R
-                       #fi
-         </refund>
-         <schedule> SCHED </schedule>
-
-    rule <k> SSTORE INDEX VALUE => . ... </k>
-         <id> ACCT </id>
-         <account>
-           <acctID> ACCT </acctID>
-           <storage> STORAGE => STORAGE [ INDEX <- VALUE ] </storage>
-           ...
-         </account>
-      requires notBool (INDEX in_keys(STORAGE))
 ```
 
 ### Call Operations
@@ -1359,6 +1336,8 @@ In the yellowpaper, each opcode is defined to consume zero gas unless specified 
 -   `#memory` computes the new memory size given the old size and next operator (with its arguments).
 -   `#memoryUsageUpdate` is the function `M` in appendix H of the yellowpaper which helps track the memory used.
 
+TUTORIAL: Fill in the semantics of `#memory` for `RETURN`.
+
 ```{.k .uiuck .rvk}
     syntax Int ::= #memory ( OpCode , Int ) [function]
  // --------------------------------------------------
@@ -1374,7 +1353,6 @@ In the yellowpaper, each opcode is defined to consume zero gas unless specified 
     rule #memory ( CALLDATACOPY START _ WIDTH  , MU ) => #memoryUsageUpdate(MU, START, WIDTH)
 
     rule #memory ( CREATE _ START WIDTH , MU ) => #memoryUsageUpdate(MU, START, WIDTH)
-    rule #memory ( RETURN START WIDTH   , MU ) => #memoryUsageUpdate(MU, START, WIDTH)
 
     rule #memory ( COP:CallOp     _ _ _ ARGSTART ARGWIDTH RETSTART RETWIDTH , MU ) => #memoryUsageUpdate(#memoryUsageUpdate(MU, ARGSTART, ARGWIDTH), RETSTART, RETWIDTH)
     rule #memory ( CSOP:CallSixOp _ _   ARGSTART ARGWIDTH RETSTART RETWIDTH , MU ) => #memoryUsageUpdate(#memoryUsageUpdate(MU, ARGSTART, ARGWIDTH), RETSTART, RETWIDTH)
@@ -1456,6 +1434,8 @@ Each opcode has an intrinsic gas cost of execution as well (appendix H of the ye
 
 -   `#gasExec` loads all the relevant surronding state and uses that to compute the intrinsic execution gas of each opcode.
 
+TUTORIAL: Fill in the semantics of `#gasExec` for `EXP`, `JUMPDEST`, and `LOG`.
+
 ```{.k .uiuck .rvk}
     syntax InternalOp ::= #gasExec ( Schedule , OpCode )
  // ----------------------------------------------------
@@ -1467,14 +1447,9 @@ Each opcode has an intrinsic gas cost of execution as well (appendix H of the ye
            ...
          </account>
 
-    rule <k> #gasExec(SCHED, EXP W0 0)  => Gexp < SCHED > ... </k>
-    rule <k> #gasExec(SCHED, EXP W0 W1) => Gexp < SCHED > +Int (Gexpbyte < SCHED > *Int (1 +Int (log256Int(W1)))) ... </k> requires W1 =/=K 0
-
     rule <k> #gasExec(SCHED, CALLDATACOPY  _ _ WIDTH) => Gverylow     < SCHED > +Int (Gcopy < SCHED > *Int (WIDTH up/Int 32)) ... </k>
     rule <k> #gasExec(SCHED, CODECOPY      _ _ WIDTH) => Gverylow     < SCHED > +Int (Gcopy < SCHED > *Int (WIDTH up/Int 32)) ... </k>
     rule <k> #gasExec(SCHED, EXTCODECOPY _ _ _ WIDTH) => Gextcodecopy < SCHED > +Int (Gcopy < SCHED > *Int (WIDTH up/Int 32)) ... </k>
-
-    rule <k> #gasExec(SCHED, LOG(N) _ WIDTH) => (Glog < SCHED > +Int (Glogdata < SCHED > *Int WIDTH) +Int (N *Int Glogtopic < SCHED >)) ... </k>
 
     rule <k> #gasExec(SCHED, COP:CallOp     GCAP ACCTTO VALUE _ _ _ _) => Ccall(SCHED, ACCTTO, ACCTS, GCAP, GAVAIL, VALUE) ... </k> <activeAccounts> ACCTS </activeAccounts> <gas> GAVAIL </gas>
     rule <k> #gasExec(SCHED, CSOP:CallSixOp GCAP ACCTTO       _ _ _ _) => Ccall(SCHED, ACCTTO, ACCTS, GCAP, GAVAIL, 0)     ... </k> <activeAccounts> ACCTS </activeAccounts> <gas> GAVAIL </gas>
@@ -1484,7 +1459,6 @@ Each opcode has an intrinsic gas cost of execution as well (appendix H of the ye
 
     rule <k> #gasExec(SCHED, SHA3 _ WIDTH) => Gsha3 < SCHED > +Int (Gsha3word < SCHED > *Int (WIDTH up/Int 32)) ... </k>
 
-    rule <k> #gasExec(SCHED, JUMPDEST) => Gjumpdest < SCHED > ... </k>
     rule <k> #gasExec(SCHED, SLOAD _)  => Gsload    < SCHED > ... </k>
 
     // Wzero
