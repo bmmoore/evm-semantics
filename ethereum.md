@@ -83,15 +83,18 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 
 ### Driving Execution
 
--   `start` places `#next` on the `op` cell so that execution of the loaded state begin.
--   `flush` places `#finalize` on the `op` cell once it sees `#end` in the `op` cell, clearing any exceptions it finds.
+-   `start` places `#next` on the `<k>` cell so that execution of the loaded state begin.
+-   `flush` places `#finalize` on the `<k>` cell once it sees `#end` in the `<k>` cell, clearing any exceptions it finds.
 
 ```{.k .uiuck .rvk}
-    syntax EthereumCommand ::= "start" | "flush"
- // --------------------------------------------
+    syntax EthereumCommand ::= "start"
+ // ----------------------------------
     rule <mode> NORMAL     </mode> <k> start => #execute    ... </k>
     rule <mode> VMTESTS    </mode> <k> start => #execute    ... </k>
     rule <mode> GASANALYZE </mode> <k> start => #gasAnalyze ... </k>
+
+    syntax EthereumCommand ::= "flush"
+ // ----------------------------------
     rule <k> #end       ~> flush => #finalize               ... </k>
     rule <k> #exception ~> flush => #finalize ~> #exception ... </k>
 ```
