@@ -79,8 +79,8 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 
     syntax EthereumCommand ::= "flush"
  // ----------------------------------
-    rule <k> #end       ~> flush => #finalize               ... </k>
-    rule <k> #exception ~> flush => #finalize ~> #exception ... </k>
+    rule <k> #end       ~> flush => #finalizeTx(false)               ... </k>
+    rule <k> #exception ~> flush => #finalizeTx(false) ~> #exception ... </k>
 ```
 
 -   `compile` will run the various compiler passes over the currently loaded program.
