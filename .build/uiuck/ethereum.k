@@ -10,10 +10,12 @@ requires "verification.k"
 
 
 requires "evm.k"
+requires "evm-prime.k"
 requires "analysis.k"
 
 module ETHEREUM-SIMULATION
     imports EVM
+    imports EVM-PRIME
     imports EVM-ANALYSIS
 
 
@@ -96,6 +98,16 @@ module ETHEREUM-SIMULATION
     rule <mode> GASANALYZE </mode> <k> start => #gasAnalyze ... </k>
     rule <k> #end       ~> flush => #finalize               ... </k>
     rule <k> #exception ~> flush => #finalize ~> #exception ... </k>
+
+
+// -   `compile` will run the various compiler passes over the currently
+//     loaded program.
+
+
+    syntax EthereumCommand ::= "compile"
+ // ------------------------------------
+    rule <mode> EVMPRIME </mode> <k> compile => . ... </k>
+         <program> PGM => #asMapOpCodes(#compile(#asOpCodes(PGM))) </program>
 
 
 // -   `exception` only clears from the `k` cell if there is an exception on the
