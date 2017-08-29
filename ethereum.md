@@ -246,6 +246,15 @@ TODO: Handle blocks with ommers.
          <program> PGM => #asMapOpCodes(#compile(#asOpCodes(PGM))) </program>
 ```
 
+-   `compile` will run the various compiler passes over the currently loaded program.
+
+```{.k .uiuck .rvk}
+    syntax EthereumCommand ::= "compile"
+ // ------------------------------------
+    rule <mode> EVMPRIME </mode> <k> compile => . ... </k>
+         <program> PGM => #asMapOpCodes(#compile(#asOpCodes(PGM))) </program>
+```
+
 -   `exception` only clears from the `k` cell if there is an exception on the `op` cell.
 -   `failure_` holds the name of a test that failed if a test does fail.
 
