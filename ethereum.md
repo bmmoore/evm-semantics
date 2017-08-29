@@ -376,5 +376,8 @@ Here we check the other post-conditions associated with an EVM test.
     rule check "callcreates" : { ("data" : (DATA:String)) , ("destination" : (ACCTTO:String)) , ("gasLimit" : (GLIMIT:String)) , ("value" : (VAL:String)) , .JSONList }
       => check "callcreates" : { #parseAddr(ACCTTO) | #parseWord(GLIMIT) | #parseWord(VAL) | #parseByteStack(DATA) }
     rule <k> check "callcreates" : C:Call => . ... </k> <callLog> CL </callLog> requires C in CL
+
+    rule <k> check "program" : (PGM:OpCodes => #asMapOpCodes(PGM)) ... </k>
+    rule <k> check "program" : (PGM:Map) => . ... </k> <program> PGM </program>
 endmodule
 ```
