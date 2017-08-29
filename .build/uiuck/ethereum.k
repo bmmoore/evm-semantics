@@ -246,7 +246,6 @@ module ETHEREUM-SIMULATION
 
 // -   `exception` only clears from the `<k>` cell if there is an exception
 //     preceding it.
-=======
 // -   `compile` will run the various compiler passes over the currently
 //     loaded program.
 
@@ -678,6 +677,8 @@ module ETHEREUM-SIMULATION
     rule <k> check "program" : (PGM:OpCodes => #asMapOpCodes(PGM)) ... </k>
     rule <k> check "program" : (PGM:Map) => . ... </k> <program> PGM </program>
    rule check TESTID : { "blockHeader" : BLOCKHEADER } => check "blockHeader" : BLOCKHEADER ~> failure TESTID
+    rule check TESTID : { "blockHeader" : BLOCKHEADER } => check "blockHeader" : BLOCKHEADER ~> failure TESTID
+    rule check TESTID : { "blockHeader" : BLOCKHEADER } => check "blockHeader" : BLOCKHEADER ~> failure TESTID
  // ----------------------------------------------------------------------------------------------------------
     rule check "blockHeader" : { KEY : VALUE , REST } => check "blockHeader" : { KEY : VALUE } ~> check "blockHeader" : { REST } requires REST =/=K .JSONList
 

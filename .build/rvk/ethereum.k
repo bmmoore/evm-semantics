@@ -262,7 +262,6 @@ module ETHEREUM-SIMULATION
 
 // -   `exception` only clears from the `k` cell if there is an exception on the
 //     `op` cell.
->>>>>>> ethereum.md: `compile` command calls EVM-PRIME compiler
 // -   `failure_` holds the name of a test that failed if a test does fail.
 
 
@@ -671,6 +670,7 @@ module ETHEREUM-SIMULATION
     rule <k> check "callcreates" : C:Call => . ... </k> <callLog> CL </callLog> requires C in CL
     rule <k> check "program" : (PGM:OpCodes => #asMapOpCodes(PGM)) ... </k>
     rule <k> check "program" : (PGM:Map) => . ... </k> <program> PGM </program>
+
     rule check TESTID : { "blockHeader" : BLOCKHEADER } => check "blockHeader" : BLOCKHEADER ~> failure TESTID
  // ----------------------------------------------------------------------------------------------------------
     rule check "blockHeader" : { KEY : VALUE , REST } => check "blockHeader" : { KEY : VALUE } ~> check "blockHeader" : { REST } requires REST =/=K .JSONList
