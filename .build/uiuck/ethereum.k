@@ -104,9 +104,9 @@ module ETHEREUM-SIMULATION
 
 
     syntax EthereumCommand ::= "exception" | "failure" String | "success"
- // ---------------------------------------------------------
+ // ---------------------------------------------------------------------
     rule <k> #exception ~> exception => . ... </k>
-    rule <k> success => . ... </k> <exit-code> _ => 0 </exit-code>
+    rule <k> success => clear ... </k> <exit-code> _ => 0 </exit-code>
     rule failure _ => .
 
 
@@ -365,8 +365,6 @@ module ETHEREUM-SIMULATION
  // ------------------------------------------------------------------------------
     rule check "gas" : ((GLEFT:String) => #parseWord(GLEFT))
     rule <k> check "gas" : GLEFT => . ... </k> <gas> GLEFT </gas>
-
-
 
     rule check TESTID : { "callcreates" : CCREATES } => check "callcreates" : CCREATES ~> failure TESTID
  // ----------------------------------------------------------------------------------------------------
