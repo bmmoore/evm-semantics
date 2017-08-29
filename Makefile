@@ -52,7 +52,6 @@ tests/proofs/hkg/%-spec.k: proofs/hkg.md
 	mkdir -p $(dir $@)
 	pandoc-tangle --from markdown --to code-k --code $* $< > $@
 
-<<<<<<< HEAD
 ### EVM-PRIME
 
 tests/evm-prime/example.evm: evm-prime.md
@@ -61,12 +60,19 @@ tests/evm-prime/example.evm: evm-prime.md
 	pandoc-tangle --from markdown --to code-k --code example evm-prime.md > $@
 
 evm-prime: tests/evm-prime/example.evm
-=======
 tests/proofs/bad/hkg-token-buggy-spec.k: proofs/token-buggy-spec.md
 	@echo "==  tangle: $@"
 	mkdir -p $(dir $@)
 	pandoc-tangle --from markdown --to code-k --code k $< > $@
->>>>>>> proofs/hkg.md, proofs/token-buggy-spec.md: using structural framing in proofs, reformatting
+
+### EVM-PRIME
+
+tests/evm-prime/example.evm: evm-prime.md
+	@echo "==  tangle: $@"
+	mkdir -p $(dir $@)
+	pandoc-tangle --from markdown --to code-k --code example evm-prime.md > $@
+
+evm-prime: tests/evm-prime/example.evm
 
 # Tests
 # -----
@@ -113,16 +119,14 @@ tests/ethereum-tests/%.json:
 	@echo "==  git submodule: cloning upstreams test repository"
 	git submodule update --init
 
-<<<<<<< HEAD
 # Building UIUC K
-=======
 tests/evm-prime/demo.evm: evm-prime.md
 	@echo "==  tangle: $@"
 	mkdir -p $(dir $@)
 	pandoc-tangle --from markdown --to code-k --code demo evm-prime.md > $@
 
 # UIUC K Specific
->>>>>>> wip: evm-prime.md added
+# Building UIUC K
 # ---------------
 
 .build/uiuck/ethereum-kompiled/extras/timestamp: $(defn_files)

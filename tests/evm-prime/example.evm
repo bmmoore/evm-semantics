@@ -6,6 +6,9 @@
 
 // The extra sort `PrimeOp` are op-codes which only exist in EVM-PRIME, so must be
 // compiled to EVM.
+// -   `Vars` are lists of `Id` (builtin to K), separated by `:`.
+// -   `#env` is used to calculate the correct memory locations to access for
+//     variables given the list of currently scoped variables.
 
 // -   `#resolvePrimeOp` and `#resolvePrimeOps` operate in the monad from
 //     `(ENV, OpCode) -> OpCodes`.
@@ -129,6 +132,8 @@ clear
 //     variables given the list of currently scoped variables.
 
 // TODO (high): Add width calculations for remaining types.
+// Variables: Assignment and Lookup
+// --------------------------------
 
 // -   `procedure (_) {_}` declares new variables in scope for the environment
 //     (note that new variables shadow existing ones).
@@ -201,6 +206,8 @@ clear
 
 // -   `_==_`, `_=/=_`, `_<_`, `_<=_`, `_>_`, and `_>=_` provide comparison
 //     operations over arithmetic expressions.
+// -   `_==_`, `_=/=_`, `_<_`, `_<=_`, `_>_`, and `_>=_` provide
+//     boolean expressions.
 
 // ### Example {#example-4}
 
