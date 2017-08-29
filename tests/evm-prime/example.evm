@@ -263,7 +263,11 @@ clear
 // head.
 
 
+<<<<<<< HEAD
 load "exec" : { "code" : procedure((s : uintword(32)) : (n : uintword(32)))
+=======
+load "exec" : { "code" : procedure(s : n)
+>>>>>>> Makefile, evm-prime/example.evm (new-file): add target for EVM-PRIME demo
                             { s := 0
                             ; n := 10
                             ; jumpdest("loop-begin")
