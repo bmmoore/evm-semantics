@@ -37,7 +37,8 @@ proof_files=${proof_dir}/sum-to-n-spec.k \
 			${proof_dir}/hkg/approve-spec.k \
 			${proof_dir}/hkg/balanceOf-spec.k \
 			${proof_dir}/hkg/transfer-else-spec.k ${proof_dir}/hkg/transfer-then-spec.k \
-			${proof_dir}/hkg/transferFrom-else-spec.k ${proof_dir}/hkg/transferFrom-then-spec.k
+			${proof_dir}/hkg/transferFrom-else-spec.k ${proof_dir}/hkg/transferFrom-then-spec.k \
+			${proof_dir}/bad/hkg-token-buggy-spec.k
 
 proofs: $(proof_files)
 
@@ -51,6 +52,7 @@ tests/proofs/hkg/%-spec.k: proofs/hkg.md
 	mkdir -p $(dir $@)
 	pandoc-tangle --from markdown --to code-k --code $* $< > $@
 
+<<<<<<< HEAD
 ### EVM-PRIME
 
 tests/evm-prime/example.evm: evm-prime.md
@@ -59,6 +61,12 @@ tests/evm-prime/example.evm: evm-prime.md
 	pandoc-tangle --from markdown --to code-k --code example evm-prime.md > $@
 
 evm-prime: tests/evm-prime/example.evm
+=======
+tests/proofs/bad/hkg-token-buggy-spec.k: proofs/token-buggy-spec.md
+	@echo "==  tangle: $@"
+	mkdir -p $(dir $@)
+	pandoc-tangle --from markdown --to code-k --code k $< > $@
+>>>>>>> proofs/hkg.md, proofs/token-buggy-spec.md: using structural framing in proofs, reformatting
 
 # Tests
 # -----
