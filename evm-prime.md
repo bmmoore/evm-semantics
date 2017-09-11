@@ -16,7 +16,7 @@ module EVM-PRIME
 
 The extra sort `PrimeOp` are op-codes which only exist in EVM-PRIME, so must be compiled to EVM.
 
-```{.k .uiuck .rvk}
+
     syntax OpCode ::= PrimeOp
  // -------------------------
 
@@ -24,6 +24,18 @@ The extra sort `PrimeOp` are op-codes which only exist in EVM-PRIME, so must be 
  // -------------------------------------------------
     rule isCompiled ( .OpCodes ) => true
     rule isCompiled ( OP ; OPS ) => (notBool isPrimeOp(OP)) andBool isCompiled(OPS)
+```
+
+=======
+-   `Vars` are lists of `Id` (builtin to K), separated by `:`.
+-   `#env` is used to calculate the correct memory locations to access for variables given the list of currently scoped variables.
+
+```{.k .uiuck .rvk}
+
+    syntax Int ::= #env ( Vars , Id ) [function]
+ // --------------------------------------------
+    rule #env( ( ( V : _ ) ; VS ) , V ) => #envWidth(VS)
+    rule #env( ( ( X : _ ) ; VS ) , V ) => #env(VS, V) requires V =/=K X
 ```
 
 -   `#resolvePrimeOp` and `#resolvePrimeOps` operate in the monad from `(ENV, OpCode) -> OpCodes`.
@@ -125,7 +137,8 @@ Because jump destinations are not well-defined until the entire program has been
 
 In this example, we check that using the structured jumps desugars to the correct original program.
 
-```{.k .example}
+```{.k .demo}
+>>>>>>> wip: evm-prime.md added
 load "exec" : { "code" : PUSH(1, 0)  ; PUSH(1, 0)  ; MSTORE
                        ; PUSH(1, 10) ; PUSH(1, 32) ; MSTORE
                        ; jumpdest("loop-begin")
@@ -164,6 +177,8 @@ PUSH Simplification
 TODO (low): Add "typed" `push`. Eg, could say `push("hello")`, and it would do the sequence of word pushes necessary for that.
 Not sure quite what this would get us, but perhaps good things long-term.
 
+=======
+>>>>>>> wip: evm-prime.md added
 -   `push` allows not specifying the width of the constant being pushed (it will be calculated for you).
 
 ```{.k .uiuck .rvk}
@@ -176,7 +191,11 @@ Not sure quite what this would get us, but perhaps good things long-term.
 
 In this example, we use our simpler `push` notation for avoiding specifying the width of a `PUSH`.
 
+<<<<<<< HEAD
 ```{.k .example}
+=======
+```{.k .demo}
+>>>>>>> wip: evm-prime.md added
 load "exec" : { "code" : push(0)  ; push(0)  ; MSTORE
                        ; push(10) ; push(32) ; MSTORE
                        ; jumpdest("loop-begin")
@@ -208,7 +227,6 @@ failure "DESUGAR EVMPRIME PUSH"
 
 clear
 ```
-
 ABI Types
 ---------
 
@@ -300,13 +318,17 @@ TODO (high): Add width calculations for remaining types.
     rule #width( uintword ( N ) ) => N
     rule #width( T [ N ] ) => #width ( T ) *Int N
 ```
+=======
+Variables: Assignment and Lookup
+--------------------------------
 
 -   `procedure (_) {_}` declares new variables in scope for the environment (note that new variables shadow existing ones).
 
 ```{.k .uiuck .rvk}
     syntax PrimeOp ::= "procedure" "(" Vars ")" "{" OpCodes "}"
  // -----------------------------------------------------------
-    rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS1 ; IDS2), OPS )
+    rule #resolvePrimeOp( .Vars , procedure ( IDS  ) { OPS } ) => #resolvePrimeOps( IDS , OPS )
+    rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS2 ; IDS1), OPS )
 ```
 
 -   `mload` loads variables from the `localMem` onto the `wordStack` (using the environment to determine where they are).
@@ -315,6 +337,7 @@ TODO (high): Add width calculations for remaining types.
 TODO (mid): `mload` and `mstore` now need to do different things based on the type of the variables.
 Perhaps they should call the ABI decoding/encoding functions (respectively) so that when we store a bunch of types to memory we know it's correctly ABI packed.
 
+=======
 ```{.k .uiuck .rvk}
     syntax PrimeOp ::= mload ( Id ) | mstore ( Id )
  // -----------------------------------------------
@@ -328,6 +351,8 @@ Perhaps they should call the ABI decoding/encoding functions (respectively) so t
     syntax PrimeOp ::= Id ":=" ExpOp
  // --------------------------------
     rule #resolvePrimeOp(VS, V := E) => #resolvePrimeOps(VS, E ; mstore(V) ; .OpCodes) requires #type(V, VS) ==K #type(E, VS)
+=======
+    rule #resolvePrimeOp(VS, V := WEXP) => #resolvePrimeOps(VS, WEXP ; mstore(V) ; .OpCodes)
 ```
 
 ### Example
@@ -336,6 +361,9 @@ In this example, we use `procedure` to declare some variables and use them with 
 
 ```{.k .example}
 load "exec" : { "code" : procedure((s : uintword(32)) : (n : uintword(32)))
+=======
+```{.k .demo}
+load "exec" : { "code" : procedure(s : n)
                             { push(0)  ; mstore(s)
                             ; push(10) ; mstore(n)
                             ; jumpdest("loop-begin")
@@ -380,6 +408,9 @@ Expressions
     syntax PrimeOp ::= ExpOp
     syntax ExpOp   ::= AExpOp | BExpOp
  // ----------------------------------
+=======
+    syntax ExpOp   ::= Id | Int
+ // ---------------------------
     rule #resolvePrimeOp(VS, V:Id)  => #resolvePrimeOp(VS, mload(V))
     rule #resolvePrimeOp(VS, C:Int) => push(C) ; .OpCodes
 ```
@@ -387,6 +418,7 @@ Expressions
 -   `_+_`, `_*_`, `_-_`, and `_/_` provide integer arithmetic expressions.
 
 ```{.k .uiuck .rvk}
+<<<<<<< HEAD
     syntax AExpOp ::= Id | Int
                     | AExpOp "+" AExpOp
                     | AExpOp "*" AExpOp
@@ -420,6 +452,7 @@ Expressions
                     | AExpOp ">"   AExpOp
                     | AExpOp ">="  AExpOp
  // -------------------------------------
+
     rule #resolvePrimeOp(VS, W0 ==  W1) => #resolvePrimeOps(VS, W1 ; W0 ; EQ           ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 =/= W1) => #resolvePrimeOps(VS, W1 ; W0 ; EQ ; ISZERO  ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 <   W1) => #resolvePrimeOps(VS, W1 ; W0 ; LT           ; .OpCodes)
@@ -432,8 +465,8 @@ Expressions
 
 In this example, we use the above expression language and assignment (`_:=_`) to simplify many parts of the code.
 
-```{.k .example}
-load "exec" : { "code" : procedure((s : uintword(32)) : (n : uintword(32)))
+```{.k .demo}
+load "exec" : { "code" : procedure(s : n)
                             { s := 0
                             ; n := 10
                             ; jumpdest("loop-begin")
@@ -512,6 +545,7 @@ In this example, we use a conditional to help with jumping back to the loop head
 
 ```{.k .example}
 load "exec" : { "code" : procedure((s : uintword(32)) : (n : uintword(32)))
+
                             { s := 0
                             ; n := 10
                             ; jumpdest("loop-begin")
@@ -555,7 +589,7 @@ While Loops
     syntax PrimeOp ::= "while" "(" ExpOp ")" "{" OpCodes "}"
  // --------------------------------------------------------
     rule #resolvePrimeOp( IDS, while ( COND ) { BODY } )
-      =>   jumpdest( #whileLabel(!LABEL:Int) +String "_begin" )
+      =>   jumpdest( #whileLabel(!LABEL) +String "_begin" )
          ; #resolvePrimeOp( IDS
                           , if ( COND ) {             BODY
                                           ++OpCodes ( jump( #whileLabel(!LABEL) +String "_begin" )
@@ -574,7 +608,7 @@ endmodule
 
 In this example, we use a while loop instead for the entire loop (becoming a highly readable program).
 
-```{.k .example}
+```{.k .demo}
 load "exec" : { "code" : procedure((s : uintword(32)) : (n : uintword(32)))
                             { s := 0
                             ; n := 10

@@ -24,6 +24,17 @@ module EVM-PRIME
     rule isCompiled ( OP ; OPS ) => (notBool isPrimeOp(OP)) andBool isCompiled(OPS)
 
 
+// -   `Vars` are lists of `Id` (builtin to K), separated by `:`.
+// -   `#env` is used to calculate the correct memory locations to access for
+//     variables given the list of currently scoped variables.
+
+
+
+    syntax Int ::= #env ( Vars , Id ) [function]
+ // --------------------------------------------
+    rule #env( ( ( V : _ ) ; VS ) , V ) => #envWidth(VS)
+    rule #env( ( ( X : _ ) ; VS ) , V ) => #env(VS, V) requires V =/=K X
+
 // -   `#resolvePrimeOp` and `#resolvePrimeOps` operate in the monad from
 //     `(ENV, OpCode) -> OpCodes`.
 
@@ -237,6 +248,8 @@ module EVM-PRIME
     rule #width( uintword ( N ) ) => N
     rule #width( T [ N ] ) => #width ( T ) *Int N
 
+// Variables: Assignment and Lookup
+// --------------------------------
 
 // -   `procedure (_) {_}` declares new variables in scope for the environment
 //     (note that new variables shadow existing ones).
@@ -244,17 +257,14 @@ module EVM-PRIME
 
     syntax PrimeOp ::= "procedure" "(" Vars ")" "{" OpCodes "}"
  // -----------------------------------------------------------
-    rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS1 ; IDS2), OPS )
-	requires IDS1 =/=K .Vars
-	
-	rule #resolvePrimeOp( .Vars  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS2), OPS )
+    rule #resolvePrimeOp( .Vars , procedure ( IDS  ) { OPS } ) => #resolvePrimeOps( IDS , OPS )
+    rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS2 ; IDS1), OPS )
 
 
 // -   `mload` loads variables from the `localMem` onto the `wordStack` (using the
 //     environment to determine where they are).
 // -   `mstore` stores an element from the `wordStack` from the location specified
 //     in the `localMem`.
-
 // TODO (mid): `mload` and `mstore` now need to do different things based on the
 // type of the variables. Perhaps they should call the ABI decoding/encoding
 // functions (respectively) so that when we store a bunch of types to memory we
@@ -275,7 +285,6 @@ module EVM-PRIME
  // --------------------------------
     rule #resolvePrimeOp(VS, V := E) => #resolvePrimeOps(VS, E ; mstore(V) ; .OpCodes) //requires #type(V, VS) ==K #type(E, VS)
 	// question: how could we know the type of E if E is a constant
-
 
 // ### Example {#example-3}
 
@@ -306,6 +315,7 @@ module EVM-PRIME
                     | AExpOp "-" AExpOp
                     | AExpOp "/" AExpOp
  // -----------------------------------
+
     rule #resolvePrimeOp(VS, W0 + W1) => #resolvePrimeOps(VS, W1 ; W0 ; ADD ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 - W1) => #resolvePrimeOps(VS, W1 ; W0 ; SUB ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 * W1) => #resolvePrimeOps(VS, W1 ; W0 ; MUL ; .OpCodes)
@@ -322,18 +332,17 @@ module EVM-PRIME
                     | BExpOp "&" BExpOp
  // -----------------------------------
 
+// -   `_==_`, `_=/=_`, `_<_`, `_<=_`, `_>_`, and `_>=_` provide
+//     boolean expressions.
 
-// -   `_==_`, `_=/=_`, `_<_`, `_<=_`, `_>_`, and `_>=_` provide comparison
-//     operations over arithmetic expressions.
 
-
-    syntax BExpOp ::= AExpOp "=="  AExpOp
-                    | AExpOp "=/=" AExpOp
-                    | AExpOp "<"   AExpOp
-                    | AExpOp "<="  AExpOp
-                    | AExpOp ">"   AExpOp
-                    | AExpOp ">="  AExpOp
- // -------------------------------------
+    syntax ExpOp ::= ExpOp "=="  ExpOp
+                   | ExpOp "=/=" ExpOp
+                   | ExpOp "<"   ExpOp
+                   | ExpOp "<="  ExpOp
+                   | ExpOp ">"   ExpOp
+                   | ExpOp ">="  ExpOp
+ // ----------------------------------
     rule #resolvePrimeOp(VS, W0 ==  W1) => #resolvePrimeOps(VS, W1 ; W0 ; EQ           ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 =/= W1) => #resolvePrimeOps(VS, W1 ; W0 ; EQ ; ISZERO  ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 <   W1) => #resolvePrimeOps(VS, W1 ; W0 ; LT           ; .OpCodes)

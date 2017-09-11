@@ -8,6 +8,7 @@
 requires "evm.k"
 
 module EVM-PRIME
+<<<<<<< HEAD
     imports EVM
 
 
@@ -18,6 +19,9 @@ module EVM-PRIME
 // The extra sort `PrimeOp` are op-codes which only exist in EVM-PRIME, so must be
 // compiled to EVM.
 
+=======
+    imports ETHEREUM
+>>>>>>> wip: evm-prime.md added
 
     syntax OpCode ::= PrimeOp
  // -------------------------
@@ -28,6 +32,23 @@ module EVM-PRIME
     rule isCompiled ( OP ; OPS ) => (notBool isPrimeOp(OP)) andBool isCompiled(OPS)
 
 
+<<<<<<< HEAD
+=======
+// -   `Vars` are lists of `Id` (builtin to K), separated by `:`.
+// -   `#env` is used to calculate the correct memory locations to access for
+//     variables given the list of currently scoped variables.
+
+
+    syntax Vars ::= List{Id, ":"}
+ // -----------------------------
+
+    syntax Int ::= #env ( Vars , Id ) [function]
+ // --------------------------------------------
+    rule #env( (V : _)  , V ) => 0
+    rule #env( (V : VS) , X ) => 32 +Int #env( VS , X ) requires X =/=K V
+
+
+>>>>>>> wip: evm-prime.md added
 // -   `#resolvePrimeOp` and `#resolvePrimeOps` operate in the monad from
 //     `(ENV, OpCode) -> OpCodes`.
 
@@ -129,10 +150,13 @@ module EVM-PRIME
 // PUSH Simplification
 // -------------------
 
+<<<<<<< HEAD
 // TODO (low): Add "typed" `push`. Eg, could say `push("hello")`, and it would do
 // the sequence of word pushes necessary for that. Not sure quite what this would
 // get us, but perhaps good things long-term.
 
+=======
+>>>>>>> wip: evm-prime.md added
 // -   `push` allows not specifying the width of the constant being pushed (it will
 //     be calculated for you).
 
@@ -147,6 +171,7 @@ module EVM-PRIME
 // In this example, we use our simpler `push` notation for avoiding specifying the
 // width of a `PUSH`.
 
+<<<<<<< HEAD
 // ABI Types
 // ---------
 
@@ -241,6 +266,10 @@ module EVM-PRIME
     rule #width( uintword ( N ) ) => N
     rule #width( T [ N ] ) => #width ( T ) *Int N
 
+=======
+// Variables: Assignment and Lookup
+// --------------------------------
+>>>>>>> wip: evm-prime.md added
 
 // -   `procedure (_) {_}` declares new variables in scope for the environment
 //     (note that new variables shadow existing ones).
@@ -248,7 +277,12 @@ module EVM-PRIME
 
     syntax PrimeOp ::= "procedure" "(" Vars ")" "{" OpCodes "}"
  // -----------------------------------------------------------
+<<<<<<< HEAD
     rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS1 ; IDS2), OPS )
+=======
+    rule #resolvePrimeOp( .Vars , procedure ( IDS  ) { OPS } ) => #resolvePrimeOps( IDS , OPS )
+    rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS2 : IDS1), OPS )
+>>>>>>> wip: evm-prime.md added
 
 
 // -   `mload` loads variables from the `localMem` onto the `wordStack` (using the
@@ -256,11 +290,14 @@ module EVM-PRIME
 // -   `mstore` stores an element from the `wordStack` from the location specified
 //     in the `localMem`.
 
+<<<<<<< HEAD
 // TODO (mid): `mload` and `mstore` now need to do different things based on the
 // type of the variables. Perhaps they should call the ABI decoding/encoding
 // functions (respectively) so that when we store a bunch of types to memory we
 // know it's correctly ABI packed.
 
+=======
+>>>>>>> wip: evm-prime.md added
 
     syntax PrimeOp ::= mload ( Id ) | mstore ( Id )
  // -----------------------------------------------
@@ -274,7 +311,11 @@ module EVM-PRIME
 
     syntax PrimeOp ::= Id ":=" ExpOp
  // --------------------------------
+<<<<<<< HEAD
     rule #resolvePrimeOp(VS, V := EXP) => #resolvePrimeOps(VS, EXP ; mstore(V) ; .OpCodes) requires #type(V, VS) ==K #type(EXP, VS)
+=======
+    rule #resolvePrimeOp(VS, V := WEXP) => #resolvePrimeOps(VS, WEXP ; mstore(V) ; .OpCodes)
+>>>>>>> wip: evm-prime.md added
 
 
 // ### Example {#example-3}
@@ -291,8 +332,13 @@ module EVM-PRIME
 
 
     syntax PrimeOp ::= ExpOp
+<<<<<<< HEAD
     syntax ExpOp   ::= AExpOp | BExpOp
  // ----------------------------------
+=======
+    syntax ExpOp   ::= Id | Int
+ // ---------------------------
+>>>>>>> wip: evm-prime.md added
     rule #resolvePrimeOp(VS, V:Id)  => #resolvePrimeOp(VS, mload(V))
     rule #resolvePrimeOp(VS, C:Int) => push(C) ; .OpCodes
 
@@ -300,18 +346,27 @@ module EVM-PRIME
 // -   `_+_`, `_*_`, `_-_`, and `_/_` provide integer arithmetic expressions.
 
 
+<<<<<<< HEAD
     syntax AExpOp ::= Id | Int
                     | AExpOp "+" AExpOp
                     | AExpOp "*" AExpOp
                     | AExpOp "-" AExpOp
                     | AExpOp "/" AExpOp
  // -----------------------------------
+=======
+    syntax ExpOp ::= ExpOp "+" ExpOp
+                   | ExpOp "*" ExpOp
+                   | ExpOp "-" ExpOp
+                   | ExpOp "/" ExpOp
+ // --------------------------------
+>>>>>>> wip: evm-prime.md added
     rule #resolvePrimeOp(VS, W0 + W1) => #resolvePrimeOps(VS, W1 ; W0 ; ADD ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 - W1) => #resolvePrimeOps(VS, W1 ; W0 ; SUB ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 * W1) => #resolvePrimeOps(VS, W1 ; W0 ; MUL ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 / W1) => #resolvePrimeOps(VS, W1 ; W0 ; DIV ; .OpCodes)
 
 
+<<<<<<< HEAD
 // -   `tt`, `ff` are the constants for true and false in boolean expressions.
 // -   `!_` is negation, `_|_` is disjunction, and `_&_` is conjunction.
 
@@ -334,6 +389,19 @@ module EVM-PRIME
                     | AExpOp ">"   AExpOp
                     | AExpOp ">="  AExpOp
  // -------------------------------------
+=======
+// -   `_==_`, `_=/=_`, `_<_`, `_<=_`, `_>_`, and `_>=_` provide
+//     boolean expressions.
+
+
+    syntax ExpOp ::= ExpOp "=="  ExpOp
+                   | ExpOp "=/=" ExpOp
+                   | ExpOp "<"   ExpOp
+                   | ExpOp "<="  ExpOp
+                   | ExpOp ">"   ExpOp
+                   | ExpOp ">="  ExpOp
+ // ----------------------------------
+>>>>>>> wip: evm-prime.md added
     rule #resolvePrimeOp(VS, W0 ==  W1) => #resolvePrimeOps(VS, W1 ; W0 ; EQ           ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 =/= W1) => #resolvePrimeOps(VS, W1 ; W0 ; EQ ; ISZERO  ; .OpCodes)
     rule #resolvePrimeOp(VS, W0 <   W1) => #resolvePrimeOps(VS, W1 ; W0 ; LT           ; .OpCodes)
@@ -360,7 +428,11 @@ module EVM-PRIME
     rule #resolvePrimeOp( IDS , if ( COND ) { THEN } )
       =>             #resolvePrimeOp(IDS, COND)
          ++OpCodes ( ISZERO
+<<<<<<< HEAD
                  ;   jumpi( #ifThenLabel(!LABEL:Int) +String "_end" )
+=======
+                 ;   jumpi( #ifThenLabel(!LABEL) +String "_end" )
+>>>>>>> wip: evm-prime.md added
                  ; ( #resolvePrimeOps(IDS, THEN)
          ++OpCodes ( jumpdest( #ifThenLabel(!LABEL) +String "_end" )
                  ;   .OpCodes
@@ -370,7 +442,11 @@ module EVM-PRIME
  // -----------------------------------------------------------------------------------
     rule #resolvePrimeOp( IDS, if ( COND ) then { THEN } else { ELSE } )
       =>             #resolvePrimeOp(IDS, COND)
+<<<<<<< HEAD
          ++OpCodes ( jumpi(#ifThenElseLabel(!LABEL:Int) +String "_true")
+=======
+         ++OpCodes ( jumpi(#ifThenElseLabel(!LABEL) +String "_true")
+>>>>>>> wip: evm-prime.md added
                  ; ( #resolvePrimeOps(IDS, ELSE)
          ++OpCodes ( jump(#ifThenElseLabel(!LABEL) +String "_end")
                  ;   jumpdest(#ifThenElseLabel(!LABEL) +String "_true")
@@ -400,7 +476,11 @@ module EVM-PRIME
     syntax PrimeOp ::= "while" "(" ExpOp ")" "{" OpCodes "}"
  // --------------------------------------------------------
     rule #resolvePrimeOp( IDS, while ( COND ) { BODY } )
+<<<<<<< HEAD
       =>   jumpdest( #whileLabel(!LABEL:Int) +String "_begin" )
+=======
+      =>   jumpdest( #whileLabel(!LABEL) +String "_begin" )
+>>>>>>> wip: evm-prime.md added
          ; #resolvePrimeOp( IDS
                           , if ( COND ) {             BODY
                                           ++OpCodes ( jump( #whileLabel(!LABEL) +String "_begin" )

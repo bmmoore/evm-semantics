@@ -98,7 +98,16 @@ tests/ethereum-tests/%.json:
 	@echo "==  git submodule: cloning upstreams test repository"
 	git submodule update --init
 
+<<<<<<< HEAD
 # Building UIUC K
+=======
+tests/evm-prime/demo.evm: evm-prime.md
+	@echo "==  tangle: $@"
+	mkdir -p $(dir $@)
+	pandoc-tangle --from markdown --to code-k --code demo evm-prime.md > $@
+
+# UIUC K Specific
+>>>>>>> wip: evm-prime.md added
 # ---------------
 
 .build/uiuck/ethereum-kompiled/extras/timestamp: $(defn_files)
