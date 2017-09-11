@@ -306,7 +306,8 @@ module EVM-DATA
 // as a cons-list, so we provide some standard cons-list manipulation tools.
 
 
-    syntax WordStack ::= ".WordStack" | Int ":" WordStack
+    syntax WordStack ::= ".WordStack"       [smtlib(wordStack)]
+						| Int ":" WordStack
  // -----------------------------------------------------
 
 
@@ -350,7 +351,7 @@ module EVM-DATA
     rule (.WordStack)[N] => 0            requires N >Int 0
     rule (W0 : WS)   [N] => WS[N -Int 1] requires N >Int 0
 
-    syntax WordStack ::= WordStack "[" Int ":=" Int "]" [function]
+    syntax WordStack ::= WordStack "[" Int ":=" Int "]" [function, smtlib(assign)]
  // --------------------------------------------------------------
     rule (W0 : WS)  [ 0 := W ] => W  : WS
     rule .WordStack [ N := W ] => 0  : (.WordStack [ N -Int 1 := W ]) requires N >Int 0
@@ -476,7 +477,7 @@ module EVM-DATA
     rule #asMapWordStack(WS:WordStack) => .Map [ 0 := WS ]
 
     syntax WordStack ::= #range ( Map , Int , Int )            [function]
-    syntax WordStack ::= #range ( Map , Int , Int , WordStack) [function, klabel(#rangeAux)]
+    syntax WordStack ::= #range ( Map , Int , Int , WordStack) [function, klabel(#rangeAux), smtlib(rangeAux)]
  // ----------------------------------------------------------------------------------------
     rule #range(WM, START, WIDTH) => #range(WM, START +Int WIDTH -Int 1, WIDTH, .WordStack)
 
@@ -529,7 +530,7 @@ module EVM-DATA
     rule #parseWord("") => 0
     rule #parseWord(S)  => #parseHexWord(S) requires lengthString(S) >=Int 2 andBool substrString(S, 0, 2) ==String "0x"
     rule #parseWord(S)  => String2Int(S) [owise]
-
+  
     syntax WordStack ::= #parseHexBytes  ( String ) [function]
                        | #parseByteStack ( String ) [function]
                        | #parseByteStackRaw ( String ) [function]
@@ -607,7 +608,7 @@ module EVM-DATA
 
     rule #rlpEncodeString(STR) => STR                        requires lengthString(STR) ==Int 1 andBool ordChar(STR) <Int 128
     rule #rlpEncodeString(STR) => #rlpEncodeLength(STR, 128) [owise]
-
+    
     syntax String ::= #rlpEncodeLength ( String , Int )          [function]
                     | #rlpEncodeLength ( String , Int , String ) [function, klabel(#rlpEncodeLengthAux)]
  // ----------------------------------------------------------------------------------------------------
@@ -652,7 +653,6 @@ module EVM-DATA
     rule #decodeLengthPrefix(STR, START, B0) => #decodeLengthPrefixLength(#str, STR, START, B0)  requires B0 >=Int (128 +Int 56) andBool B0 <Int 192
     rule #decodeLengthPrefix(STR, START, B0) => #list(B0 -Int 192, START +Int 1)                 requires B0 >=Int 192 andBool B0 <Int 192 +Int 56
     rule #decodeLengthPrefix(STR, START, B0) => #decodeLengthPrefixLength(#list, STR, START, B0) [owise]
-
     rule #decodeLengthPrefixLength(#str,  STR, START, B0) => #decodeLengthPrefixLength(#str,  START, B0 -Int 128 -Int 56 +Int 1, #asWord(#parseByteStackRaw(substrString(STR, START +Int 1, START +Int 1 +Int (B0 -Int 128 -Int 56 +Int 1)))))
     rule #decodeLengthPrefixLength(#list, STR, START, B0) => #decodeLengthPrefixLength(#list, START, B0 -Int 192 -Int 56 +Int 1, #asWord(#parseByteStackRaw(substrString(STR, START +Int 1, START +Int 1 +Int (B0 -Int 192 -Int 56 +Int 1)))))
     rule #decodeLengthPrefixLength(TYPE, START, LL, L) => TYPE(L, START +Int 1 +Int LL)

@@ -308,7 +308,8 @@ The stack and some standard operations over it are provided here.
 This stack also serves as a cons-list, so we provide some standard cons-list manipulation tools.
 
 ```{.k .uiuck .rvk}
-    syntax WordStack ::= ".WordStack" | Int ":" WordStack
+    syntax WordStack ::= ".WordStack"      [smtlib(wordStack)]
+		       | Int ":" WordStack
  // -----------------------------------------------------
 ```
 
@@ -350,7 +351,7 @@ This stack also serves as a cons-list, so we provide some standard cons-list man
     rule (.WordStack)[N] => 0            requires N >Int 0
     rule (W0 : WS)   [N] => WS[N -Int 1] requires N >Int 0
 
-    syntax WordStack ::= WordStack "[" Int ":=" Int "]" [function]
+    syntax WordStack ::= WordStack "[" Int ":=" Int "]" [function, smtlib(assign)]
  // --------------------------------------------------------------
     rule (W0 : WS)  [ 0 := W ] => W  : WS
     rule .WordStack [ N := W ] => 0  : (.WordStack [ N -Int 1 := W ]) requires N >Int 0
@@ -424,7 +425,7 @@ Addresses
     rule #newAddr(ACCT, NONCE) => #addr(#parseHexWord(Keccak256(#rlpEncodeLength(#rlpEncodeWord(ACCT) +String #rlpEncodeWord(NONCE), 192))))
 
     syntax Int ::= #sender ( Int , Int , Int , Int , Int , String , Int , WordStack , WordStack ) [function]
-                 | #sender ( String , Int , String , String )                                     [function, klabel(#senderAux)]
+                 | #sender ( String , Int , String , String )                                     [function, klabel(#senderAux), smtlib(asByteStack)]
  // ----------------------------------------------------------------------------------------------------------------------------
     rule #sender(TN, TP, TG, TT, TV, DATA, TW, TR, TS)
       => #sender(#unparseByteStack(#parseHexBytes(Keccak256(#rlpEncodeLength(#rlpEncodeWordStack(TN : TP : TG : TT : TV : .WordStack) +String #rlpEncodeString(DATA), 192)))), TW, #unparseByteStack(TR), #unparseByteStack(TS))
@@ -468,7 +469,7 @@ We are using the polymorphic `Map` sort for these word maps.
     rule #asMapWordStack(WS:WordStack) => .Map [ 0 := WS ]
 
     syntax WordStack ::= #range ( Map , Int , Int )            [function]
-    syntax WordStack ::= #range ( Map , Int , Int , WordStack) [function, klabel(#rangeAux)]
+    syntax WordStack ::= #range ( Map , Int , Int , WordStack) [function, klabel(#rangeAux), smtlib(rangeAux)]
  // ----------------------------------------------------------------------------------------
     rule #range(WM, START, WIDTH) => #range(WM, START +Int WIDTH -Int 1, WIDTH, .WordStack)
 
