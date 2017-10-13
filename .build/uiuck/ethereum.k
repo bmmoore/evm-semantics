@@ -232,9 +232,6 @@ module ETHEREUM-SIMULATION
     rule Rb => 5 *Int (10 ^Int 18)
 
 
-// -   `exception` only clears from the `<k>` cell if there is an exception
-//     preceding it.
-=======
 // -   `compile` will run the various compiler passes over the currently
 //     loaded program.
 
@@ -654,7 +651,6 @@ module ETHEREUM-SIMULATION
       => check "callcreates" : { #parseAddr(ACCTTO) | #parseWord(GLIMIT) | #parseWord(VAL) | #parseByteStack(DATA) }
     rule <k> check "callcreates" : C:Call => . ... </k> <callLog> CL </callLog> requires C in CL
 
-<<<<<<< HEAD
     rule check TESTID : { "blockHeader" : BLOCKHEADER } => check "blockHeader" : BLOCKHEADER ~> failure TESTID
  // ----------------------------------------------------------------------------------------------------------
     rule check "blockHeader" : { KEY : VALUE , REST } => check "blockHeader" : { KEY : VALUE } ~> check "blockHeader" : { REST } requires REST =/=K .JSONList
@@ -733,6 +729,7 @@ module ETHEREUM-SIMULATION
     rule check TESTID : { "uncleHeaders" : OMMERS } => check "ommerHeaders" : OMMERS ~> failure TESTID
  // --------------------------------------------------------------------------------------------------
     rule <k> check "ommerHeaders" : [ .JSONList ] => . ... </k> <ommerBlockHeaders> [ .JSONList ] </ommerBlockHeaders>
+
     rule <k> check "program" : (PGM:OpCodes => #asMapOpCodes(PGM)) ... </k>
     rule <k> check "program" : (PGM:Map) => . ... </k> <program> PGM </program>
 endmodule

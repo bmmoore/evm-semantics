@@ -129,6 +129,8 @@ module EVM-PRIME
 // the sequence of word pushes necessary for that. Not sure quite what this would
 // get us, but perhaps good things long-term.
 
+// TODO : byteWidth could be calculated using byte2Int up/Int 8
+
 // -   `push` allows not specifying the width of the constant being pushed (it will
 //     be calculated for you).
 
@@ -136,6 +138,10 @@ module EVM-PRIME
     syntax PrimeOp ::= push ( Int ) [function]
  // ------------------------------------------
     rule push(N) => PUSH(#sizeWordStack(#padToWidth(1, #asByteStack(N))), N) requires N <Int pow256
+
+    syntax Int ::= #byteWidth ( Int ) [function]
+ // --------------------------------------------
+    rule #byteWidth( I:Int ) => #sizeWordStack(#padToWidth(1, #asByteStack(I)))
 
 
 // ### Example {#example-2}
@@ -166,8 +172,14 @@ module EVM-PRIME
 
 
 // -   `ArithType` are types which may appear in arithmetic expressions.
+// -   Types ending in `word` are types where the integer expresses the size
+//     in bytes.
+// -   Types not ending in `word` are types where the integer expresses the size
+//     in bits.
+// -   They are immediately desugared into types ending in `word`.
 
-// TODO (high): Explain what each different word type here means.
+// TODO (high): Explain what each different word type here means and add
+// appropriate desugarings.
 
 
     syntax ABIType   ::= ArithType
@@ -199,10 +211,18 @@ module EVM-PRIME
     rule #type(V , (V : T) ; _ ) => T
     rule #type(V , (X : _) ; VS) => #type(V, VS) requires V =/=K X
 
+    rule #type(I:Int, VS) => intword( #byteWidth ( I ) )
     rule #type(tt, VS) => bool
     rule #type(ff, VS) => bool
     rule #type(B1 | B2, VS) => bool requires #type(B1, VS) ==K bool andBool #type(B2, VS) ==K bool
     rule #type(B1 & B2, VS) => bool requires #type(B1, VS) ==K bool andBool #type(B2, VS) ==K bool
+
+    rule #type(A1 == A2, VS) => bool requires #type(A1, VS) ==K #type(A2, VS)
+    rule #type(A1 =/= A2, VS) => bool requires #type(A1, VS) ==K #type(A2, VS)
+    rule #type(A1 < A2, VS) => bool requires #type(A1, VS) ==K #type(A2, VS)
+    rule #type(A1 <= A2, VS) => bool requires #type(A1, VS) ==K #type(A2, VS)
+    rule #type(A1 > A2, VS) => bool requires #type(A1, VS) ==K #type(A2, VS)
+    rule #type(A1 >= A2, VS) => bool requires #type(A1, VS) ==K #type(A2, VS)
 
 
 // Variables: Declaration, Lookup, and Assignment
@@ -237,6 +257,15 @@ module EVM-PRIME
     rule #width( uintword ( N ) ) => N
     rule #width( T [ N ] ) => #width ( T ) *Int N
 
+    rule #width( intword ( N ) ) => N
+    rule #width( ufixedword ( N , M ) ) => N
+    rule #width( fixedword ( N , M ) ) => N
+
+    rule #width( bool ) => 1 // bools have 1 byte
+    rule #width( address ) => 20
+
+    rule #width( bytes ( N ) ) => N
+
 
 // -   `procedure (_) {_}` declares new variables in scope for the environment
 //     (note that new variables shadow existing ones).
@@ -245,9 +274,6 @@ module EVM-PRIME
     syntax PrimeOp ::= "procedure" "(" Vars ")" "{" OpCodes "}"
  // -----------------------------------------------------------
     rule #resolvePrimeOp( IDS1  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS1 ; IDS2), OPS )
-	requires IDS1 =/=K .Vars
-	
-	rule #resolvePrimeOp( .Vars  , procedure ( IDS2 ) { OPS } ) => #resolvePrimeOps( (IDS2), OPS )
 
 
 // -   `mload` loads variables from the `localMem` onto the `wordStack` (using the
@@ -273,8 +299,7 @@ module EVM-PRIME
 
     syntax PrimeOp ::= Id ":=" ExpOp
  // --------------------------------
-    rule #resolvePrimeOp(VS, V := E) => #resolvePrimeOps(VS, E ; mstore(V) ; .OpCodes) //requires #type(V, VS) ==K #type(E, VS)
-	// question: how could we know the type of E if E is a constant
+    rule #resolvePrimeOp(VS, V := E) => #resolvePrimeOps(VS, E ; mstore(V) ; .OpCodes) requires #type(V, VS) ==K #type(E, VS)
 
 
 // ### Example {#example-3}
